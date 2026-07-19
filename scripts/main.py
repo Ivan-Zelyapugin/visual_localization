@@ -20,7 +20,7 @@ if __name__ == "__main__":
 
     # Initialize the keypoint detector
     superpoint_config = SuperPointConfig(
-        device="cuda",
+        device="cpu",
         nms_radius=4,
         keypoint_threshold=0.01,
         max_keypoints=-1,
@@ -29,7 +29,7 @@ if __name__ == "__main__":
 
     # Initialize the keypoint matcher
     superglue_config = SuperGlueConfig(
-        device="cuda",
+        device="cpu",
         weights="outdoor",
         sinkhorn_iterations=20,
         match_threshold=0.5,
@@ -50,7 +50,7 @@ if __name__ == "__main__":
     # Initialize the drone image streamer
     streamer = DroneImageStreamer(
         image_folder="data/query/",
-        has_gt=True,
+        has_gt=False,
         logger=logging.getLogger("%s.DroneImageStreamer" % __name__),  # noqa
     )
     print(len(streamer))
