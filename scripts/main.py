@@ -50,7 +50,7 @@ if __name__ == "__main__":
     # Initialize the drone image streamer
     streamer = DroneImageStreamer(
         image_folder="data/query/",
-        has_gt=False,
+        has_gt=True,
         logger=logging.getLogger("%s.DroneImageStreamer" % __name__),  # noqa
     )
     print(len(streamer))
