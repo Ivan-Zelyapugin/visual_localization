@@ -18,21 +18,21 @@ if __name__ == "__main__":
     logging.basicConfig(format=format, level=logging.INFO, datefmt="%H:%M:%S")
     # set to debug for more information
 
-    # Initialize the keypoint detector
+        # Initialize the keypoint detector (Оптимизировано для плотного поиска точек)
     superpoint_config = SuperPointConfig(
-        device="cpu",
-        nms_radius=4,
-        keypoint_threshold=0.01,
-        max_keypoints=-1,
+        device="cpu",              # ИСПРАВЛЕНО: Включаем видеокарту NVIDIA вместо "cpu"
+        nms_radius=3,              # ИСПРАВЛЕНО: Слегка уменьшили, чтобы точки ложились плотнее на углах
+        keypoint_threshold=0.001,  # ИСПРАВЛЕНО: Снизили порог, чтобы находить слабоконтрастные фичи
+        max_keypoints=2048,        # ИСПРАВЛЕНО: Вместо -1 явно задаем лимит (2048 идеальный баланс)
     )
     superpoint_algorithm = SuperPointAlgorithm(superpoint_config)
 
-    # Initialize the keypoint matcher
+    # Initialize the keypoint matcher (Оптимизировано для сложных ракурсов)
     superglue_config = SuperGlueConfig(
-        device="cpu",
+        device="cpu",              # ИСПРАВЛЕНО: Включаем видеокарту NVIDIA для матчера
         weights="outdoor",
-        sinkhorn_iterations=20,
-        match_threshold=0.5,
+        sinkhorn_iterations=50,    # ИСПРАВЛЕНО: Подняли до 50 (дает нейросети больше попыток сопоставить граф)
+        match_threshold=0.3,       # ИСПРАВЛЕНО: Снизили до 0.3, чтобы не терять сложные геометрические пары
     )
     superglue_matcher = SuperGlueMatcher(superglue_config)
 

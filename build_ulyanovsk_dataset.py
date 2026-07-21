@@ -55,7 +55,7 @@ def tile_to_lat_lon(x, y, zoom):
 # 2. Настраиваем координаты военного городка в Ульяновске
 TOP_LEFT_LAT, TOP_LEFT_LON = 54.341000, 48.391000
 BOTTOM_RIGHT_LAT, BOTTOM_RIGHT_LON = 54.331000, 48.411000
-ZOOM = 18  # Высокая детализация
+ZOOM = 17  # Высокая детализация
 OUTPUT_DIR = os.path.join("data", "map")
 
 os.makedirs(OUTPUT_DIR, exist_ok=True)
