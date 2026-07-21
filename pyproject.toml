@@ -13,6 +13,7 @@ torchvision = { version="^0.14", extras=["cuda116"] }
 tqdm = "^4.66.2"
 scipy = "^1.13.0"
 opencv-python = "4.5.5.64"
+ultralytics = "^8.0.0"
 
 
 [tool.poetry.group.dev.dependencies]

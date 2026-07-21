@@ -1,6 +1,7 @@
 import logging
 from pathlib import Path
 from pprint import pprint
+import argparse
 
 from svl.keypoint_pipeline.detection_and_description import SuperPointAlgorithm
 from svl.keypoint_pipeline.matcher import SuperGlueMatcher
@@ -10,15 +11,47 @@ from svl.localization.map_reader import SatelliteMapReader
 from svl.localization.pipeline import Pipeline, PipelineConfig
 from svl.localization.preprocessing import QueryProcessor
 from svl.tms.data_structures import CameraModel
+from svl.yolo_detector import YOLODetector
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Drone Visual Localization with YOLO")
+    parser.add_argument(
+        "--yolo-model",
+        type=str,
+        default=None,
+        help="Path to trained YOLO model file (.pt)",
+    )
+    parser.add_argument(
+        "--yolo-device",
+        type=str,
+        default="cpu",
+        help="Device to run YOLO on (cpu, cuda, etc.)",
+    )
+    parser.add_argument(
+        "--yolo-conf",
+        type=float,
+        default=0.5,
+        help="Confidence threshold for YOLO detections",
+    )
+    args = parser.parse_args()
 
     # logging.basicConfig(level=logging.INFO)
     format = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
     logging.basicConfig(format=format, level=logging.INFO, datefmt="%H:%M:%S")
     # set to debug for more information
 
-        # Initialize the keypoint detector (Оптимизировано для плотного поиска точек)
+    # Initialize YOLO detector (if model path provided)
+    yolo_detector = None
+    if args.yolo_model is not None:
+        yolo_logger = logging.getLogger("%s.YOLODetector" % __name__)
+        yolo_detector = YOLODetector(
+            model_path=args.yolo_model,
+            device=args.yolo_device,
+            conf_threshold=args.yolo_conf,
+            logger=yolo_logger,
+        )
+
+    # Initialize the keypoint detector (Оптимизировано для плотного поиска точек)
     superpoint_config = SuperPointConfig(
         device="cpu",              # ИСПРАВЛЕНО: Включаем видеокарту NVIDIA вместо "cpu"
         nms_radius=3,              # ИСПРАВЛЕНО: Слегка уменьшили, чтобы точки ложились плотнее на углах
@@ -79,6 +112,7 @@ if __name__ == "__main__":
         matcher=superglue_matcher,
         query_processor=query_processor,
         config=PipelineConfig(),
+        yolo_detector=yolo_detector,
         # logger=logging.getLogger("%s.Pipeline" % __name__),  # noqa
         logger=logger,
     )

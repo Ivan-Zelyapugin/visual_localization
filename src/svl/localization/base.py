@@ -255,6 +255,8 @@ class BasePipeline:
         Pipeline configuration object
     query_processor : QueryProcessor
         Query processor object
+    yolo_detector : Optional[Any]
+        YOLO object detector (optional)
     logger : logging.Logger
         Logger object
     """
@@ -268,6 +270,7 @@ class BasePipeline:
         config: PipelineConfig,
         query_processor: QueryProcessor,
         logger: logging.Logger,
+        yolo_detector: Optional[Any] = None,
     ) -> None:
         self.map_reader = map_reader
         self.drone_streamer = drone_streamer
@@ -275,6 +278,7 @@ class BasePipeline:
         self.matcher = matcher
         self.config = config
         self.query_processor = query_processor
+        self.yolo_detector = yolo_detector
         self.logger = logger
 
     def estimate_and_apply_geometric_transform(

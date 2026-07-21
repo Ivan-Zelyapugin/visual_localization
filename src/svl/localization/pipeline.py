@@ -1,6 +1,6 @@
 import logging
 from pathlib import Path
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, Optional, Union
 
 import matplotlib.cm as cm
 import numpy as np
@@ -46,6 +46,8 @@ class Pipeline(BasePipeline):
         the configuration of the pipeline
     query_processor : QueryProcessor
         the query processor to preprocess the query image (resize, warp, etc.)
+    yolo_detector : Optional[Any]
+        YOLO object detector (optional)
     logger : logging.Logger
         the logger to use for logging
     """
@@ -59,6 +61,7 @@ class Pipeline(BasePipeline):
         config: PipelineConfig,
         query_processor: QueryProcessor,
         logger: logging.Logger,
+        yolo_detector: Optional[Any] = None,
     ) -> None:
 
         super().__init__(
@@ -69,6 +72,7 @@ class Pipeline(BasePipeline):
             config=config,
             query_processor=query_processor,
             logger=logger,
+            yolo_detector=yolo_detector,
         )
 
     def run_on_image(
@@ -102,6 +106,8 @@ class Pipeline(BasePipeline):
             - distance: float
                 the haversine distance between the predicted and ground truth GPS
                 coordinates
+            - yolo_detections: List[Dict[str, Any]]
+                list of YOLO detected objects
         """
         self.logger.info(f"Processing image {drone_image.name}")
 
@@ -118,6 +124,12 @@ class Pipeline(BasePipeline):
         matched_confidence = None
         matched_valid = None
         matched_inliers = None
+        yolo_detections = []
+
+        # Run YOLO detection first (if available)
+        if self.yolo_detector is not None:
+            self.logger.info("Running YOLO object detection")
+            yolo_detections = self.yolo_detector.detect(drone_image.image)
 
         drone_image.key_points = self.detector.detect_and_describe_keypoints(
             drone_image.image
@@ -189,6 +201,12 @@ class Pipeline(BasePipeline):
                 viz_drone_image = self.draw_center(
                     viz_drone_image, (int(features_mean[0]), int(features_mean[1]))
                 )
+                
+                # Draw YOLO detections if available
+                if self.yolo_detector is not None and yolo_detections:
+                    viz_drone_image = self.yolo_detector.draw_detections(
+                        viz_drone_image, yolo_detections
+                    )
 
         if best_dst is not None:
             predicted_coordinates = self.compute_geo_pose(matched_image, center)
@@ -224,6 +242,17 @@ class Pipeline(BasePipeline):
             self.logger.info(f"Haversine distance in meters: {distance * 1000}")
         else:
             self.logger.warning(f"No match found for {drone_image.name}")
+            # If no match, still save YOLO visualization if available
+            if output_path and self.yolo_detector is not None and yolo_detections:
+                output_path = (
+                    Path(output_path) if isinstance(output_path, str) else output_path
+                )
+                viz_path = output_path / f"{drone_image.name}_yolo_only.jpg"
+                viz_drone_image = drone_image.image.copy()
+                viz_drone_image = self.yolo_detector.draw_detections(
+                    viz_drone_image, yolo_detections
+                )
+                self.save_viz(viz_drone_image, viz_path)
 
         return {
             "is_match": is_match,
@@ -234,6 +263,7 @@ class Pipeline(BasePipeline):
             "num_inliers": matched_inliers,
             "matched_image": matched_image,
             "distance": distance * 1000 if distance else None,
+            "yolo_detections": yolo_detections,
         }
 
     def run(self, output_path: Union[str, Path] = None) -> List[Dict[str, Any]]:
